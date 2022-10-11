@@ -5,7 +5,7 @@
 # https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
 #
 
-FROM ubuntu/22.04 
+FROM ubuntu:22.04
 
 # If there are security updates for any of the packages we install,
 # bump the date in this environment variable to invalidate the Docker
@@ -35,7 +35,7 @@ rm -rf /var/lib/apt/lists/*
 # compute the source version.
 RUN apt-get --quiet update && apt-get --quiet install -y \
     libffi-dev \
-    python-virtualenv \
+    python3-virtualenv \
     git \
 && rm -rf /var/lib/apt/lists/*
 
@@ -46,8 +46,8 @@ RUN sed -i -e 's/^# deb-src/deb-src/' /etc/apt/sources.list
 # magic-wormhole depends on these and pip wants to build them both from
 # source.
 RUN apt-get --quiet update && apt-get --quiet build-dep -y \
-    python-openssl \
-    python-nacl \
+    python3-openssl \
+    python3-nacl \
 && rm -rf /var/lib/apt/lists/*
 
 # Create a virtualenv into which to install magicwormhole in to.
@@ -67,11 +67,13 @@ RUN adduser --uid 1000 --disabled-password --gecos "" "${WORMHOLE_USER_NAME}"
 # listens on 4000 by default.
 EXPOSE 4000
 
-# Put the source somewhere pip will be able to see it.
-ADD . /magic-wormhole
+ENV WORMHOLE_VERSION="0.12.0"
+
+RUN git clone https://github.com/magic-wormhole/magic-wormhole.git /magic-wormhole
 
 # Get the app we want to run!
 WORKDIR /magic-wormhole
+RUN git checkout ${WORMHOLE_VERSION}
 RUN /app/env/bin/pip install .
 
 # Run the application with this working directory.
